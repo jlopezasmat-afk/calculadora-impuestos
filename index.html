@@ -5,108 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Impuestos</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      background: #f4f6f9;
-      color: #333;
-    }
-    header {
-      background: linear-gradient(90deg, #b30000, #800000);
-      color: #fff;
-      padding: 25px;
-      text-align: center;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    }
-    h1, h2 {
-      margin: 5px 0;
-    }
-    section {
-      padding: 20px;
-      max-width: 900px;
-      margin: 25px auto;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-      color: #444;
-    }
-    input, select {
-      padding: 10px;
-      width: 100%;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 15px;
-      width: 100%;
-      background: #b30000;
-      color: white;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #800000;
-      transform: scale(1.02);
-    }
-    .resultados {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-top: 25px;
-    }
-    .card {
-      padding: 20px;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 18px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-    .igv { background: #0077b6; }
-    .renta { background: #2a9d8f; }
-    .essalud { background: #f4a261; }
-    .onp { background: #d62828; }
-    .card h3 {
-      margin-bottom: 10px;
-      font-size: 22px;
-    }
-    .trabajador {
-      margin-top: 10px;
-      padding: 10px;
-      background: #f9f9f9;
-      border: 1px dashed #ccc;
-      border-radius: 5px;
-    }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; margin: 0; }
+    header { background: linear-gradient(90deg, #b30000, #800000); color: #fff; text-align: center; padding: 20px; }
+    section { max-width: 900px; margin: 25px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    label { font-weight: bold; margin-top: 15px; display: block; }
+    input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; }
+    input[readonly] { background: #eee; }
+    button { margin-top: 20px; width: 100%; padding: 15px; border: none; border-radius: 8px; background: #b30000; color: white; font-size: 18px; cursor: pointer; }
+    button:hover { background: #800000; }
+    .alerta { background: #0077b6; color: #fff; padding: 15px; border-radius: 10px; margin-top: 20px; font-size: 18px; }
+    .resultados { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 25px; }
+    .card { padding: 20px; border-radius: 12px; color: #fff; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .igv { background: #0077b6; } .renta { background: #2a9d8f; } .essalud { background: #f4a261; } .onp { background: #d62828; }
+    .trabajador { margin-top: 10px; padding: 10px; background: #f9f9f9; border: 1px dashed #ccc; border-radius: 5px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Instituto Escuela de Negocios y Desarrollo Gerencial</h1>
-    <h2>Calculadora de Impuestos Empresariales</h2>
+    <h1>Instituto ENDG</h1>
+    <h2>Calculadora de Impuestos</h2>
   </header>
 
   <section>
+    <!-- RUC -->
+    <label>Escribe tu número de RUC:</label>
+    <input type="text" id="ruc" placeholder="Ejemplo: 20456789011" maxlength="11" oninput="verificarRUC()">
+    <div id="mensajeRUC" class="alerta" style="display:none;"></div>
+
     <!-- IGV -->
     <label>Ventas Totales (S/):</label>
-    <input type="number" id="ventas" placeholder="Ejemplo: 10000">
+    <input type="number" id="ventas" placeholder="Ejemplo: 10000" oninput="calcularIngresosNetos()">
 
     <label>Compras Totales (S/):</label>
     <input type="number" id="compras" placeholder="Ejemplo: 5000">
 
-    <!-- Renta -->
-    <label>Ingresos Totales (S/):</label>
-    <input type="number" id="ingresos" placeholder="Ejemplo: 15000">
+    <!-- Ingresos Netos -->
+    <label>Ingresos Netos (S/):</label>
+    <input type="number" id="ingresosNetos" readonly>
 
+    <!-- Renta -->
     <label>Tipo de Empresa:</label>
     <select id="tipoEmpresa">
       <option value="mype">MYPE (1%)</option>
@@ -120,73 +57,85 @@
     <div id="sueldosContainer"></div>
 
     <button onclick="calcularImpuestos()">Calcular Impuestos</button>
-
     <div class="resultados" id="resultado"></div>
   </section>
 
   <script>
+    // Tabla SUNAT AGO-DIC 2025
+    const calendario = {
+      "AGO": {0:"15 SET",1:"16 SET","2":"17 SET","3":"17 SET","4":"18 SET","5":"18 SET","6":"19 SET","7":"19 SET","8":"22 SET","9":"22 SET"},
+      "SET": {0:"16 OCT",1:"17 OCT","2":"20 OCT","3":"20 OCT","4":"21 OCT","5":"21 OCT","6":"22 OCT","7":"22 OCT","8":"23 OCT","9":"23 OCT"},
+      "OCT": {0:"17 NOV",1:"18 NOV","2":"19 NOV","3":"19 NOV","4":"20 NOV","5":"20 NOV","6":"21 NOV","7":"21 NOV","8":"24 NOV","9":"24 NOV"},
+      "NOV": {0:"17 DIC",1:"18 DIC","2":"19 DIC","3":"19 DIC","4":"22 DIC","5":"22 DIC","6":"23 DIC","7":"23 DIC","8":"24 DIC","9":"24 DIC"},
+      "DIC": {0:"16 ENE",1:"19 ENE","2":"20 ENE","3":"20 ENE","4":"21 ENE","5":"21 ENE","6":"22 ENE","7":"22 ENE","8":"23 ENE","9":"23 ENE"},
+    };
+
+    // Detectar periodo actual (mes anterior)
+    function getPeriodo() {
+      const hoy = new Date();
+      const mes = hoy.getMonth(); // 0 = enero
+      const meses = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SET","OCT","NOV","DIC"];
+      return meses[mes-1]; // mes anterior
+    }
+
+    function verificarRUC() {
+      const ruc = document.getElementById("ruc").value;
+      if (ruc.length < 11) return;
+
+      const ultimo = ruc.slice(-1); // último dígito
+      const periodo = getPeriodo();
+
+      if (calendario[periodo]) {
+        const vencimiento = calendario[periodo][ultimo];
+        document.getElementById("mensajeRUC").style.display = "block";
+        document.getElementById("mensajeRUC").innerHTML =
+          `📅 Tu declaración del periodo <b>${periodo} 2025</b> vence el <b>${vencimiento}</b>.`;
+      }
+    }
+
+    function calcularIngresosNetos() {
+      let ventas = parseFloat(document.getElementById('ventas').value) || 0;
+      let ingresosNetos = ventas / 1.18;
+      document.getElementById('ingresosNetos').value = Math.round(ingresosNetos);
+    }
+
     function generarCamposSueldos() {
       let num = parseInt(document.getElementById("numTrabajadores").value) || 0;
       let contenedor = document.getElementById("sueldosContainer");
       contenedor.innerHTML = "";
-
       for (let i = 1; i <= num; i++) {
         contenedor.innerHTML += `
           <div class="trabajador">
             <label>Sueldo trabajador ${i} (S/):</label>
             <input type="number" id="sueldo${i}" placeholder="Ejemplo: 1200">
-          </div>
-        `;
+          </div>`;
       }
     }
 
     function calcularImpuestos() {
       let ventas = parseFloat(document.getElementById('ventas').value) || 0;
       let compras = parseFloat(document.getElementById('compras').value) || 0;
-      let ingresos = parseFloat(document.getElementById('ingresos').value) || 0;
+      let ingresosNetos = parseFloat(document.getElementById('ingresosNetos').value) || 0;
       let tipoEmpresa = document.getElementById('tipoEmpresa').value;
       let numTrabajadores = parseInt(document.getElementById('numTrabajadores').value) || 0;
 
-      // IGV
-      let igvVentas = (ventas / 1.18) * 0.18;
-      let igvCompras = (compras / 1.18) * 0.18;
-      let igvPagar = igvVentas - igvCompras;
+      let igvVentas = Math.round((ventas / 1.18) * 0.18);
+      let igvCompras = Math.round((compras / 1.18) * 0.18);
+      let igvPagar = Math.round(igvVentas - igvCompras);
+      let renta = tipoEmpresa === "mype" ? Math.round(ingresosNetos * 0.01) : Math.round(ingresosNetos * 0.015);
 
-      // Renta
-      let renta = tipoEmpresa === "mype" ? ingresos * 0.01 : ingresos * 0.015;
-
-      // Sueldos
       let totalSueldos = 0;
       for (let i = 1; i <= numTrabajadores; i++) {
         totalSueldos += parseFloat(document.getElementById(`sueldo${i}`).value) || 0;
       }
+      let essalud = Math.round(totalSueldos * 0.09);
+      let onp = Math.round(totalSueldos * 0.13);
 
-      let essalud = totalSueldos * 0.09;
-      let onp = totalSueldos * 0.13;
-
-      // Mostrar resultados con tarjetas
       document.getElementById('resultado').innerHTML = `
-        <div class="card igv">
-          <h3>📊 IGV</h3>
-          Ventas: S/ ${igvVentas.toFixed(2)} <br>
-          Compras: S/ ${igvCompras.toFixed(2)} <br>
-          <b>Por pagar: S/ ${igvPagar.toFixed(2)}</b>
-        </div>
-        <div class="card renta">
-          <h3>💼 Renta</h3>
-          Régimen: ${tipoEmpresa === "mype" ? "MYPE (1%)" : "General (1.5%)"}<br>
-          <b>Total: S/ ${renta.toFixed(2)}</b>
-        </div>
-        <div class="card essalud">
-          <h3>💊 ESSALUD</h3>
-          Sueldos: S/ ${totalSueldos.toFixed(2)} <br>
-          <b>9%: S/ ${essalud.toFixed(2)}</b>
-        </div>
-        <div class="card onp">
-          <h3>🏦 ONP</h3>
-          Sueldos: S/ ${totalSueldos.toFixed(2)} <br>
-          <b>13%: S/ ${onp.toFixed(2)}</b>
-        </div>
+        <div class="card igv"><h3>📊 IGV</h3>Ventas: S/ ${igvVentas}<br>Compras: S/ ${igvCompras}<br><b>Por pagar: S/ ${igvPagar}</b></div>
+        <div class="card renta"><h3>💼 Renta</h3>Ingresos Netos: S/ ${ingresosNetos}<br>Régimen: ${tipoEmpresa === "mype" ? "MYPE (1%)" : "General (1.5%)"}<br><b>Total: S/ ${renta}</b></div>
+        <div class="card essalud"><h3>💊 ESSALUD</h3>Sueldos: S/ ${totalSueldos}<br><b>9%: S/ ${essalud}</b></div>
+        <div class="card onp"><h3>🏦 ONP</h3>Sueldos: S/ ${totalSueldos}<br><b>13%: S/ ${onp}</b></div>
       `;
     }
   </script>
