@@ -5,51 +5,188 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Impuestos</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #fff; color: #000; }
-    header { background: #b00; color: #fff; padding: 20px; text-align: center; }
-    section { padding: 20px; max-width: 600px; margin: auto; }
-    input, button { padding: 10px; margin: 5px; width: 100%; }
-    .resultado { font-weight: bold; color: #b00; margin-top: 20px; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: #f4f6f9;
+      color: #333;
+    }
+    header {
+      background: linear-gradient(90deg, #b30000, #800000);
+      color: #fff;
+      padding: 25px;
+      text-align: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+    h1, h2 {
+      margin: 5px 0;
+    }
+    section {
+      padding: 20px;
+      max-width: 900px;
+      margin: 25px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #444;
+    }
+    input, select {
+      padding: 10px;
+      width: 100%;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 15px;
+      width: 100%;
+      background: #b30000;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #800000;
+      transform: scale(1.02);
+    }
+    .resultados {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 25px;
+    }
+    .card {
+      padding: 20px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 18px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .igv { background: #0077b6; }
+    .renta { background: #2a9d8f; }
+    .essalud { background: #f4a261; }
+    .onp { background: #d62828; }
+    .card h3 {
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+    .trabajador {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px dashed #ccc;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Instituto Escuela de Negocios y Desarrollo Gerencial</h1>
-    <h2>Calculadora de Impuestos</h2>
+    <h2>Calculadora de Impuestos Empresariales</h2>
   </header>
 
   <section>
-    <h3>Ingresa tus datos:</h3>
-    <label>Ingresos mensuales (S/):</label>
-    <input type="number" id="ingresos">
-    
-    <label>Gastos deducibles (S/):</label>
-    <input type="number" id="gastos">
-    
-    <label>Número de trabajadores:</label>
-    <input type="number" id="trabajadores">
+    <!-- IGV -->
+    <label>Ventas Totales (S/):</label>
+    <input type="number" id="ventas" placeholder="Ejemplo: 10000">
 
-    <button onclick="calcular()">Calcular</button>
+    <label>Compras Totales (S/):</label>
+    <input type="number" id="compras" placeholder="Ejemplo: 5000">
 
-    <div class="resultado" id="resultado"></div>
+    <!-- Renta -->
+    <label>Ingresos Totales (S/):</label>
+    <input type="number" id="ingresos" placeholder="Ejemplo: 15000">
+
+    <label>Tipo de Empresa:</label>
+    <select id="tipoEmpresa">
+      <option value="mype">MYPE (1%)</option>
+      <option value="general">General (1.5%)</option>
+    </select>
+
+    <!-- Trabajadores -->
+    <label>Número de Trabajadores:</label>
+    <input type="number" id="numTrabajadores" placeholder="Ejemplo: 3" onchange="generarCamposSueldos()">
+
+    <div id="sueldosContainer"></div>
+
+    <button onclick="calcularImpuestos()">Calcular Impuestos</button>
+
+    <div class="resultados" id="resultado"></div>
   </section>
 
   <script>
-    function calcular() {
+    function generarCamposSueldos() {
+      let num = parseInt(document.getElementById("numTrabajadores").value) || 0;
+      let contenedor = document.getElementById("sueldosContainer");
+      contenedor.innerHTML = "";
+
+      for (let i = 1; i <= num; i++) {
+        contenedor.innerHTML += `
+          <div class="trabajador">
+            <label>Sueldo trabajador ${i} (S/):</label>
+            <input type="number" id="sueldo${i}" placeholder="Ejemplo: 1200">
+          </div>
+        `;
+      }
+    }
+
+    function calcularImpuestos() {
+      let ventas = parseFloat(document.getElementById('ventas').value) || 0;
+      let compras = parseFloat(document.getElementById('compras').value) || 0;
       let ingresos = parseFloat(document.getElementById('ingresos').value) || 0;
-      let gastos = parseFloat(document.getElementById('gastos').value) || 0;
-      let trabajadores = parseInt(document.getElementById('trabajadores').value) || 0;
+      let tipoEmpresa = document.getElementById('tipoEmpresa').value;
+      let numTrabajadores = parseInt(document.getElementById('numTrabajadores').value) || 0;
 
-      let igv = ingresos * 0.18; // IGV 18%
-      let renta = (ingresos - gastos) * 0.29; // Renta 29% sobre utilidad
-      let essalud = trabajadores * 200; // aproximado mensual
-      let onp = trabajadores * 150; // aproximado mensual
+      // IGV
+      let igvVentas = (ventas / 1.18) * 0.18;
+      let igvCompras = (compras / 1.18) * 0.18;
+      let igvPagar = igvVentas - igvCompras;
 
+      // Renta
+      let renta = tipoEmpresa === "mype" ? ingresos * 0.01 : ingresos * 0.015;
+
+      // Sueldos
+      let totalSueldos = 0;
+      for (let i = 1; i <= numTrabajadores; i++) {
+        totalSueldos += parseFloat(document.getElementById(`sueldo${i}`).value) || 0;
+      }
+
+      let essalud = totalSueldos * 0.09;
+      let onp = totalSueldos * 0.13;
+
+      // Mostrar resultados con tarjetas
       document.getElementById('resultado').innerHTML = `
-        IGV a pagar: S/ ${igv.toFixed(2)} <br>
-        Renta mensual: S/ ${renta.toFixed(2)} <br>
-        Seguro de salud: S/ ${essalud.toFixed(2)} <br>
-        ONP trabajadores: S/ ${onp.toFixed(2)}
+        <div class="card igv">
+          <h3>📊 IGV</h3>
+          Ventas: S/ ${igvVentas.toFixed(2)} <br>
+          Compras: S/ ${igvCompras.toFixed(2)} <br>
+          <b>Por pagar: S/ ${igvPagar.toFixed(2)}</b>
+        </div>
+        <div class="card renta">
+          <h3>💼 Renta</h3>
+          Régimen: ${tipoEmpresa === "mype" ? "MYPE (1%)" : "General (1.5%)"}<br>
+          <b>Total: S/ ${renta.toFixed(2)}</b>
+        </div>
+        <div class="card essalud">
+          <h3>💊 ESSALUD</h3>
+          Sueldos: S/ ${totalSueldos.toFixed(2)} <br>
+          <b>9%: S/ ${essalud.toFixed(2)}</b>
+        </div>
+        <div class="card onp">
+          <h3>🏦 ONP</h3>
+          Sueldos: S/ ${totalSueldos.toFixed(2)} <br>
+          <b>13%: S/ ${onp.toFixed(2)}</b>
+        </div>
       `;
     }
   </script>
